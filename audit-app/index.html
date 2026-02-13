@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Audit Tool — Маркетинговый аудит сайтов</title>
+    <title>AI Аудит Маркетинговых Грехов — Покажи клиенту дыры в сайте</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             margin: 0;
@@ -12,126 +13,187 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
             min-height: 100vh;
-            padding: 20px;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
+            padding: 20px;
         }
 
-        .header {
+        header {
             text-align: center;
-            color: white;
-            margin-bottom: 30px;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        .card {
-            background: white;
+            padding: 40px 20px;
+            background: rgba(255, 255, 255, 0.03);
             border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #a0a0a0;
+            font-size: 1.1em;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #e0e0e0;
+            font-weight: 500;
+        }
+
+        .tab:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .input-group {
             margin-bottom: 20px;
         }
 
-        .input-group label {
+        label {
             display: block;
             margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
+            color: #b0b0b0;
+            font-weight: 500;
         }
 
-        .input-group input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-
-        .input-group input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .optional-inputs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .optional-inputs {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .btn {
+        input[type="text"],
+        input[type="url"],
+        textarea,
+        select {
             width: 100%;
             padding: 15px;
-            font-size: 18px;
-            font-weight: 600;
-            color: white;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #e0e0e0;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
         }
 
-        .btn:hover {
+        button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
         }
 
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn:disabled {
-            background: #ccc;
+        button:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
             transform: none;
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 2px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0;
         }
 
         .loading {
             text-align: center;
             padding: 40px;
-            display: none;
-        }
-
-        .loading.active {
-            display: block;
         }
 
         .spinner {
-            border: 4px solid #f3f3f3;
+            border: 4px solid rgba(255, 255, 255, 0.1);
             border-top: 4px solid #667eea;
             border-radius: 50%;
             width: 50px;
             height: 50px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            margin: 0 auto;
         }
 
         @keyframes spin {
@@ -139,548 +201,904 @@
             100% { transform: rotate(360deg); }
         }
 
-        .results {
-            display: none;
-        }
-
-        .results.active {
-            display: block;
-        }
-
-        .summary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
             padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 25px;
+            margin: 20px 0;
         }
 
-        .summary h2 {
+        .card h3 {
+            color: #667eea;
             margin-bottom: 15px;
+            font-size: 1.3em;
         }
 
-        .issue {
-            background: #f8f9fa;
-            border-left: 4px solid #dc3545;
-            padding: 20px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-        }
-
-        .issue.warning {
-            border-left-color: #ffc107;
-        }
-
-        .issue.info {
-            border-left-color: #17a2b8;
-        }
-
-        .issue h3 {
-            color: #333;
-            margin-bottom: 10px;
+        .metric {
             display: flex;
-            align-items: center;
-            gap: 10px;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .severity {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: #b0b0b0;
+        }
+
+        .metric-value {
+            color: #667eea;
             font-weight: 600;
-            text-transform: uppercase;
         }
 
-        .severity.high {
-            background: #dc3545;
-            color: white;
-        }
-
-        .severity.medium {
-            background: #ffc107;
-            color: #333;
-        }
-
-        .severity.low {
-            background: #17a2b8;
-            color: white;
-        }
-
-        .issue p {
-            margin-bottom: 10px;
-            line-height: 1.6;
-            color: #555;
-        }
-
-        .issue .impact {
-            font-weight: 600;
-            color: #dc3545;
-        }
-
-        .issue .recommendation {
-            background: white;
-            padding: 15px;
-            border-radius: 6px;
-            margin-top: 10px;
-        }
-
-        .report-btn {
-            background: #28a745;
-            margin-top: 20px;
-        }
-
-        .report-btn:hover {
-            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.4);
-        }
-
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #f5c6cb;
-            margin-top: 20px;
-            display: none;
-        }
-
-        .error.active {
-            display: block;
-        }
-
-        .financial-impact {
-            background: #fff3cd;
-            border: 2px solid #ffc107;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-
-        .financial-impact h3 {
-            color: #856404;
-            margin-bottom: 15px;
-        }
-
-        .financial-stats {
+        .comparison-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
         }
 
-        .stat-box {
-            background: white;
+        @media (max-width: 768px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+        }
+
+        .tip {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 4px solid #667eea;
             padding: 15px;
+            margin: 15px 0;
             border-radius: 8px;
-            text-align: center;
         }
 
-        .stat-box .label {
-            font-size: 14px;
-            color: #666;
+        .tip-title {
+            color: #667eea;
+            font-weight: 600;
             margin-bottom: 5px;
         }
 
-        .stat-box .value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #dc3545;
+        pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 15px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        code {
+            color: #a6e3a1;
+            font-family: 'Courier New', monospace;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin: 5px 5px 5px 0;
+        }
+
+        .badge-success {
+            background: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .badge-warning {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fcd34d;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .forecast-table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+        }
+
+        .forecast-table th,
+        .forecast-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .forecast-table th {
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .forecast-table tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .highlight {
+            background: rgba(102, 126, 234, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🚀 AI Audit Tool</h1>
-            <p>Маркетинговый аудит сайтов с расчётом финансовых потерь</p>
+        <header>
+            <h1>🔥 AI Аудит Маркетинговых Грехов</h1>
+            <p class="subtitle">Покажи клиенту дыры в его сайте — и закрой сделку на месте</p>
+        </header>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('quick-audit')">⚡ Быстрый аудит</div>
+            <div class="tab" onclick="switchTab('battle')">⚔️ Битва сайтов</div>
+            <div class="tab" onclick="switchTab('report')">📊 Отчёт для клиента</div>
+            <div class="tab" onclick="switchTab('forecast')">💰 Финансовый прогноз</div>
         </div>
 
-        <div class="card">
-            <div class="input-group">
-                <label for="urlInput">🌐 URL сайта для проверки</label>
-                <input
-                    type="text"
-                    id="urlInput"
-                    placeholder="https://example.com или example.com"
-                    value="">
-            </div>
-
-            <div class="optional-inputs">
-                <div class="input-group">
-                    <label for="trafficInput">📊 Трафик (посетителей/месяц, опционально)</label>
-                    <input
-                        type="number"
-                        id="trafficInput"
-                        placeholder="Например: 10000"
-                        value="">
-                </div>
-
-                <div class="input-group">
-                    <label for="avgCheckInput">💰 Средний чек (₽, опционально)</label>
-                    <input
-                        type="number"
-                        id="avgCheckInput"
-                        placeholder="Например: 5000"
-                        value="">
-                </div>
-            </div>
-
-            <button class="btn" id="analyzeBtn" onclick="analyzeWebsite()">
-                🔍 Проверить сайт
-            </button>
-
-            <div class="error" id="errorBlock"></div>
-        </div>
-
-        <div class="loading" id="loadingBlock">
-            <div class="spinner"></div>
-            <p id="loadingText">Загружаю страницу...</p>
-        </div>
-
-        <div class="results" id="resultsBlock">
+        <!-- Быстрый аудит -->
+        <div id="quick-audit" class="tab-content active">
             <div class="card">
-                <div class="summary" id="summaryBlock"></div>
+                <h3>Быстрый анализ сайта</h3>
+                <div class="input-group">
+                    <label>URL сайта клиента</label>
+                    <input type="url" id="quickUrl" placeholder="https://example.com">
+                </div>
+                <button onclick="runQuickAudit()">🚀 Запустить анализ</button>
+                <div id="quickResults"></div>
+            </div>
+        </div>
 
-                <div id="financialImpactBlock"></div>
+        <!-- Битва сайтов -->
+        <div id="battle" class="tab-content">
+            <div class="card">
+                <h3>Сравнение с конкурентом</h3>
+                <div class="two-column">
+                    <div class="input-group">
+                        <label>Сайт клиента</label>
+                        <input type="url" id="battleUrl1" placeholder="https://client.com">
+                    </div>
+                    <div class="input-group">
+                        <label>Сайт конкурента</label>
+                        <input type="url" id="battleUrl2" placeholder="https://competitor.com">
+                    </div>
+                </div>
+                <button onclick="runBattle()">⚔️ Начать сравнение</button>
+                <div id="battleResults"></div>
+            </div>
+        </div>
 
-                <div id="issuesBlock"></div>
+        <!-- Отчёт для клиента -->
+        <div id="report" class="tab-content">
+            <div class="card">
+                <h3>Генератор отчёта</h3>
+                <div class="input-group">
+                    <label>URL сайта</label>
+                    <input type="url" id="reportUrl" placeholder="https://example.com">
+                </div>
+                <div class="input-group">
+                    <label>Имя клиента</label>
+                    <input type="text" id="clientName" placeholder="Иван Иванов">
+                </div>
+                <div class="input-group">
+                    <label>Тип бизнеса</label>
+                    <select id="businessType">
+                        <option value="ecommerce">E-commerce</option>
+                        <option value="services">Услуги</option>
+                        <option value="b2b">B2B</option>
+                        <option value="local">Локальный бизнес</option>
+                        <option value="saas">SaaS</option>
+                    </select>
+                </div>
+                <button onclick="generateReport()">📊 Создать отчёт</button>
+                <div id="reportResults"></div>
+            </div>
+        </div>
 
-                <button class="btn report-btn" onclick="generateReport()">
-                    📄 Сформировать отчёт для клиента
-                </button>
+        <!-- Финансовый прогноз -->
+        <div id="forecast" class="tab-content">
+            <div class="card">
+                <h3>ROI калькулятор</h3>
+                <div class="input-group">
+                    <label>URL сайта</label>
+                    <input type="url" id="forecastUrl" placeholder="https://example.com">
+                </div>
+                <div class="two-column">
+                    <div class="input-group">
+                        <label>Текущий трафик (визитов/мес)</label>
+                        <input type="number" id="currentTraffic" placeholder="1000">
+                    </div>
+                    <div class="input-group">
+                        <label>Средний чек (руб)</label>
+                        <input type="number" id="avgCheck" placeholder="5000">
+                    </div>
+                </div>
+                <div class="two-column">
+                    <div class="input-group">
+                        <label>Текущая конверсия (%)</label>
+                        <input type="number" id="currentConversion" placeholder="2" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>Бюджет на улучшения (руб)</label>
+                        <input type="number" id="budget" placeholder="100000">
+                    </div>
+                </div>
+                <button onclick="calculateForecast()">💰 Рассчитать прогноз</button>
+                <div id="forecastResults"></div>
             </div>
         </div>
     </div>
 
     <script>
-        let currentAnalysis = null;
-        let currentUrl = '';
-        let currentTraffic = 0;
-        let currentAvgCheck = 0;
+        // Переключение табов
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
 
-        async function analyzeWebsite() {
-            const urlInput = document.getElementById('urlInput').value.trim();
-            const trafficInput = document.getElementById('trafficInput').value;
-            const avgCheckInput = document.getElementById('avgCheckInput').value;
-
-            // Валидация
-            if (!urlInput) {
-                showError('Пожалуйста, введите URL сайта');
-                return;
-            }
-
-            // Нормализация URL
-            let url = urlInput;
-            if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                url = 'https://' + url;
-            }
-
-            currentUrl = url;
-            currentTraffic = trafficInput ? parseInt(trafficInput) : 0;
-            currentAvgCheck = avgCheckInput ? parseInt(avgCheckInput) : 0;
-
-            // Скрываем результаты и ошибки
-            hideError();
-            document.getElementById('resultsBlock').classList.remove('active');
-
-            // Показываем загрузку
-            const loadingBlock = document.getElementById('loadingBlock');
-            const loadingText = document.getElementById('loadingText');
-            loadingBlock.classList.add('active');
-            loadingText.textContent = 'Загружаю страницу...';
-
-            // Блокируем кнопку
-            const analyzeBtn = document.getElementById('analyzeBtn');
-            analyzeBtn.disabled = true;
-
-            try {
-                // Шаг 1: Парсинг страницы
-                loadingText.textContent = 'Загружаю и парсю страницу...';
-                const pageContent = await fetchPageContent(url);
-
-                // Шаг 2: Анализ через LLM
-                loadingText.textContent = 'Анализирую сайт с помощью AI (это может занять 1-2 минуты)...';
-                const analysis = await analyzePageWithLLM(pageContent, url, currentTraffic, currentAvgCheck);
-
-                // Сохраняем результаты
-                currentAnalysis = analysis;
-
-                // Отображаем результаты
-                displayResults(analysis);
-
-                // Скрываем загрузку
-                loadingBlock.classList.remove('active');
-
-            } catch (error) {
-                console.error('Ошибка анализа:', error);
-                loadingBlock.classList.remove('active');
-                showError('Ошибка: ' + error.message);
-            } finally {
-                analyzeBtn.disabled = false;
-            }
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
         }
 
-        async function fetchPageContent(url) {
+        // Показать загрузку
+        function showLoading(elementId) {
+            document.getElementById(elementId).innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 20px; color: #b0b0b0;">Анализируем сайт...</p>
+                </div>
+            `;
+        }
+
+        // Показать ошибку
+        function showError(elementId, message) {
+            document.getElementById(elementId).innerHTML = `
+                <div class="error">
+                    <strong>Ошибка:</strong> ${message}
+                </div>
+            `;
+        }
+
+        // Функция для парсинга контента через Jina AI
+        async function parseWebsite(url) {
             try {
                 const response = await fetch('http://localhost:5000/api/parse', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({ url })
                 });
 
                 const data = await response.json();
-                if (data.error) throw new Error(data.error);
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
                 return data.content;
             } catch (error) {
-                console.error('Ошибка fetchPageContent:', error);
+                console.error('Ошибка парсинга:', error);
                 throw new Error('Не удалось загрузить страницу: ' + error.message);
             }
         }
 
-        async function analyzePageWithLLM(content, url, traffic, avgCheck) {
-            const systemPrompt = `Ты - эксперт по маркетинговому анализу сайтов. Твоя задача - провести детальный аудит сайта и выявить критические проблемы, которые влияют на конверсию и продажи.
-
-Анализируй сайт по следующим критериям:
-1. Первое впечатление и ценностное предложение
-2. Понятность продукта/услуги
-3. Доверие (отзывы, гарантии, сертификаты)
-4. Призывы к действию (CTA)
-5. Юзабилити и навигация
-6. Мобильная версия
-7. Скорость загрузки (если видно проблемы в коде)
-8. Контактная информация
-9. Социальные доказательства
-10. Ошибки и технические проблемы
-
-Для каждой проблемы укажи:
-- Серьезность (high/medium/low)
-- Описание проблемы
-- Влияние на конверсию (в %)
-- Рекомендации по исправлению
-
-Верни результат СТРОГО в формате JSON:
-{
-    "overall_summary": "Краткое резюме состояния сайта",
-    "issues": [
-        {
-            "title": "Название проблемы",
-            "severity": "high|medium|low",
-            "description": "Подробное описание",
-            "impact_percent": 15,
-            "recommendation": "Что нужно сделать"
-        }
-    ]
-}`;
-
-            const userPrompt = `Проанализируй этот сайт: ${url}
-
-${traffic > 0 ? `Текущий трафик: ${traffic} посетителей/месяц` : ''}
-${avgCheck > 0 ? `Средний чек: ${avgCheck} ₽` : ''}
-
-Содержимое страницы:
-${content.substring(0, 15000)}
-
-Проведи глубокий маркетинговый аудит и верни JSON с проблемами.`;
-
+        // Функция для анализа через Polza AI (защищённый backend)
+        async function analyzeWithAI(prompt, parsedContent) {
             try {
                 const response = await fetch('http://localhost:5000/api/analyze', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({
                         payload: {
                             model: 'gpt-4o-mini',
                             messages: [
-                                { role: 'system', content: systemPrompt },
-                                { role: 'user', content: userPrompt }
+                                {
+                                    role: 'system',
+                                    content: 'Ты опытный маркетолог и специалист по конверсии. Анализируй сайты и давай конкретные рекомендации.'
+                                },
+                                {
+                                    role: 'user',
+                                    content: `${prompt}\n\нКонтент сайта:\n${parsedContent}`
+                                }
                             ],
                             temperature: 0.7,
-                            max_tokens: 8192,
-                            response_format: { type: 'json_object' }
+                            max_tokens: 8192
                         }
                     })
                 });
 
                 const data = await response.json();
-                if (data.error) throw new Error(data.error);
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
 
                 if (!data.choices || !data.choices[0]) {
                     throw new Error('Пустой ответ от API');
                 }
 
-                const resultText = data.choices[0].message.content;
-                const result = JSON.parse(resultText);
-
-                if (!result.overall_summary || !result.issues) {
-                    throw new Error('Некорректный формат ответа');
-                }
-
-                return result;
+                return data.choices[0].message.content;
             } catch (error) {
-                console.error('Ошибка analyzePageWithLLM:', error);
-                throw error;
+                console.error('Ошибка AI анализа:', error);
+                throw new Error('Не удалось проанализировать сайт: ' + error.message);
             }
         }
 
-        function displayResults(analysis) {
-            // Summary
-            const summaryBlock = document.getElementById('summaryBlock');
-            summaryBlock.innerHTML = `
-                <h2>📊 Общая оценка</h2>
-                <p>${analysis.overall_summary}</p>
-            `;
-
-            // Financial Impact (если указаны трафик и средний чек)
-            const financialBlock = document.getElementById('financialImpactBlock');
-            if (currentTraffic > 0 && currentAvgCheck > 0) {
-                const totalImpact = analysis.issues.reduce((sum, issue) => sum + (issue.impact_percent || 0), 0);
-                const potentialRevenue = currentTraffic * currentAvgCheck;
-                const currentLoss = potentialRevenue * (totalImpact / 100);
-                const potentialGain = currentLoss;
-
-                financialBlock.innerHTML = `
-                    <div class="financial-impact">
-                        <h3>💰 Финансовое влияние проблем</h3>
-                        <div class="financial-stats">
-                            <div class="stat-box">
-                                <div class="label">Потенциальная выручка</div>
-                                <div class="value">${formatMoney(potentialRevenue)}</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="label">Текущие потери</div>
-                                <div class="value">${formatMoney(currentLoss)}</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="label">Возможный прирост</div>
-                                <div class="value">${formatMoney(potentialGain)}</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else {
-                financialBlock.innerHTML = '';
-            }
-
-            // Issues
-            const issuesBlock = document.getElementById('issuesBlock');
-            issuesBlock.innerHTML = '<h2>🔍 Выявленные проблемы</h2>';
-
-            analysis.issues.forEach(issue => {
-                const issueDiv = document.createElement('div');
-                issueDiv.className = `issue ${issue.severity}`;
-
-                issueDiv.innerHTML = `
-                    <h3>
-                        ${issue.title}
-                        <span class="severity ${issue.severity}">${getSeverityText(issue.severity)}</span>
-                    </h3>
-                    <p>${issue.description}</p>
-                    ${issue.impact_percent ? `<p class="impact">📉 Влияние на конверсию: -${issue.impact_percent}%</p>` : ''}
-                    <div class="recommendation">
-                        <strong>✅ Рекомендация:</strong>
-                        <p>${issue.recommendation}</p>
-                    </div>
-                `;
-
-                issuesBlock.appendChild(issueDiv);
-            });
-
-            // Показываем результаты
-            document.getElementById('resultsBlock').classList.add('active');
-
-            // Прокручиваем к результатам
-            document.getElementById('resultsBlock').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function getSeverityText(severity) {
-            const map = {
-                'high': 'Критично',
-                'medium': 'Средне',
-                'low': 'Низко'
-            };
-            return map[severity] || severity;
-        }
-
-        function formatMoney(amount) {
-            return new Intl.NumberFormat('ru-RU', {
-                style: 'currency',
-                currency: 'RUB',
-                maximumFractionDigits: 0
-            }).format(amount);
-        }
-
-        function showError(message) {
-            const errorBlock = document.getElementById('errorBlock');
-            errorBlock.textContent = message;
-            errorBlock.classList.add('active');
-        }
-
-        function hideError() {
-            const errorBlock = document.getElementById('errorBlock');
-            errorBlock.classList.remove('active');
-        }
-
-        function generateReport() {
-            if (!currentAnalysis) {
-                alert('Нет данных для формирования отчёта');
+        // Быстрый аудит
+        async function runQuickAudit() {
+            const url = document.getElementById('quickUrl').value;
+            if (!url) {
+                showError('quickResults', 'Введите URL сайта');
                 return;
             }
 
-            let report = `МАРКЕТИНГОВЫЙ АУДИТ САЙТА\n`;
-            report += `${'='.repeat(50)}\n\n`;
-            report += `URL: ${currentUrl}\n`;
-            report += `Дата: ${new Date().toLocaleDateString('ru-RU')}\n\n`;
+            showLoading('quickResults');
 
-            report += `ОБЩАЯ ОЦЕНКА:\n`;
-            report += `${currentAnalysis.overall_summary}\n\n`;
+            try {
+                const content = await parseWebsite(url);
+                const analysis = await analyzeWithAI(
+                    `Проанализируй этот сайт и найди 5 главных проблем, которые мешают продажам.
+                    Для каждой проблемы дай:
+                    1. Название проблемы
+                    2. Почему это критично
+                    3. Как исправить
+                    4. Потенциальный рост конверсии
 
-            if (currentTraffic > 0 && currentAvgCheck > 0) {
-                const totalImpact = currentAnalysis.issues.reduce((sum, issue) => sum + (issue.impact_percent || 0), 0);
-                const potentialRevenue = currentTraffic * currentAvgCheck;
-                const currentLoss = potentialRevenue * (totalImpact / 100);
+                    Формат ответа: JSON с массивом problems, каждая проблема содержит: title, impact, solution, conversion_boost`,
+                    content
+                );
 
-                report += `ФИНАНСОВОЕ ВЛИЯНИЕ:\n`;
-                report += `• Трафик: ${currentTraffic.toLocaleString('ru-RU')} посетителей/месяц\n`;
-                report += `• Средний чек: ${formatMoney(currentAvgCheck)}\n`;
-                report += `• Потенциальная выручка: ${formatMoney(potentialRevenue)}/мес\n`;
-                report += `• Текущие потери: ${formatMoney(currentLoss)}/мес\n`;
-                report += `• Суммарное влияние проблем: -${totalImpact}% конверсии\n\n`;
+                displayQuickAudit(analysis, url);
+            } catch (error) {
+                showError('quickResults', error.message);
             }
-
-            report += `ВЫЯВЛЕННЫЕ ПРОБЛЕМЫ:\n`;
-            report += `${'-'.repeat(50)}\n\n`;
-
-            currentAnalysis.issues.forEach((issue, index) => {
-                report += `${index + 1}. ${issue.title.toUpperCase()} [${getSeverityText(issue.severity)}]\n\n`;
-                report += `Описание:\n${issue.description}\n\n`;
-                if (issue.impact_percent) {
-                    report += `Влияние на конверсию: -${issue.impact_percent}%\n\n`;
-                }
-                report += `Рекомендация:\n${issue.recommendation}\n\n`;
-                report += `${'-'.repeat(50)}\n\n`;
-            });
-
-            report += `\nОтчёт сформирован автоматически с помощью AI Audit Tool\n`;
-
-            // Копируем в буфер обмена
-            navigator.clipboard.writeText(report).then(() => {
-                alert('✅ Отчёт скопирован в буфер обмена!\n\nТеперь можете вставить его в документ для клиента.');
-            }).catch(err => {
-                // Если не удалось скопировать, создаём текстовый файл
-                const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `audit_${new URL(currentUrl).hostname}_${new Date().toISOString().split('T')[0]}.txt`;
-                a.click();
-                URL.revokeObjectURL(url);
-            });
         }
 
-        // Enter для отправки
-        document.getElementById('urlInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                analyzeWebsite();
+        function displayQuickAudit(analysis, url) {
+            try {
+                const data = JSON.parse(analysis);
+                let html = `
+                    <div class="success">
+                        ✅ Анализ завершён для ${url}
+                    </div>
+                    <div class="card">
+                        <h3>🎯 Найденные проблемы</h3>
+                `;
+
+                data.problems.forEach((problem, index) => {
+                    html += `
+                        <div class="card" style="margin-top: 20px; background: rgba(239, 68, 68, 0.05);">
+                            <h4 style="color: #fca5a5;">Проблема ${index + 1}: ${problem.title}</h4>
+                            <div class="metric">
+                                <span class="metric-label">💥 Влияние на бизнес:</span>
+                                <span class="metric-value">${problem.impact}</span>
+                            </div>
+                            <div class="tip">
+                                <div class="tip-title">🔧 Решение:</div>
+                                ${problem.solution}
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">📈 Потенциальный рост:</span>
+                                <span class="metric-value" style="color: #86efac;">+${problem.conversion_boost}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                document.getElementById('quickResults').innerHTML = html;
+            } catch (error) {
+                // Если ответ не JSON, показываем как есть
+                document.getElementById('quickResults').innerHTML = `
+                    <div class="card">
+                        <h3>Результаты анализа</h3>
+                        <pre>${analysis}</pre>
+                    </div>
+                `;
             }
-        });
+        }
+
+        // Битва сайтов
+        async function runBattle() {
+            const url1 = document.getElementById('battleUrl1').value;
+            const url2 = document.getElementById('battleUrl2').value;
+
+            if (!url1 || !url2) {
+                showError('battleResults', 'Введите оба URL');
+                return;
+            }
+
+            showLoading('battleResults');
+
+            try {
+                const [content1, content2] = await Promise.all([
+                    parseWebsite(url1),
+                    parseWebsite(url2)
+                ]);
+
+                const comparison = await analyzeWithAI(
+                    `Сравни два сайта и определи победителя по критериям:
+                    - Первое впечатление
+                    - Ясность УТП
+                    - Призывы к действию
+                    - Доказательства (отзывы, кейсы)
+                    - Юзабилити
+                    - Скорость загрузки (по контенту)
+
+                    Сайт 1: ${url1}
+                    Сайт 2: ${url2}
+
+                    Формат: JSON с полями site1_score, site2_score (0-100), winner, categories (массив объектов с category, site1_score, site2_score, comment)`,
+                    `Сайт 1:\n${content1}\n\nСайт 2:\n${content2}`
+                );
+
+                displayBattle(comparison, url1, url2);
+            } catch (error) {
+                showError('battleResults', error.message);
+            }
+        }
+
+        function displayBattle(comparison, url1, url2) {
+            try {
+                const data = JSON.parse(comparison);
+
+                let html = `
+                    <div class="success">
+                        🏆 Победитель: ${data.winner}
+                    </div>
+
+                    <div class="comparison-grid">
+                        <div class="card">
+                            <h3>Сайт клиента</h3>
+                            <p style="color: #667eea; font-size: 3em; text-align: center; font-weight: bold;">${data.site1_score}</p>
+                            <p style="text-align: center; color: #b0b0b0;">${url1}</p>
+                        </div>
+                        <div class="card">
+                            <h3>Конкурент</h3>
+                            <p style="color: #764ba2; font-size: 3em; text-align: center; font-weight: bold;">${data.site2_score}</p>
+                            <p style="text-align: center; color: #b0b0b0;">${url2}</p>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="battleChart"></canvas>
+                    </div>
+
+                    <div class="card">
+                        <h3>Детальное сравнение</h3>
+                `;
+
+                data.categories.forEach(cat => {
+                    html += `
+                        <div class="metric">
+                            <span class="metric-label">${cat.category}</span>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <span class="badge ${cat.site1_score > cat.site2_score ? 'badge-success' : 'badge-warning'}">${cat.site1_score}</span>
+                                <span style="color: #666;">vs</span>
+                                <span class="badge ${cat.site2_score > cat.site1_score ? 'badge-success' : 'badge-warning'}">${cat.site2_score}</span>
+                            </div>
+                        </div>
+                        <div class="tip">
+                            ${cat.comment}
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                document.getElementById('battleResults').innerHTML = html;
+
+                // Рисуем график
+                const ctx = document.getElementById('battleChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: data.categories.map(c => c.category),
+                        datasets: [{
+                            label: 'Ваш сайт',
+                            data: data.categories.map(c => c.site1_score),
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        }, {
+                            label: 'Конкурент',
+                            data: data.categories.map(c => c.site2_score),
+                            borderColor: '#764ba2',
+                            backgroundColor: 'rgba(118, 75, 162, 0.2)',
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: { color: '#b0b0b0' },
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                                pointLabels: { color: '#e0e0e0' }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: { color: '#e0e0e0' }
+                            }
+                        }
+                    }
+                });
+
+            } catch (error) {
+                document.getElementById('battleResults').innerHTML = `
+                    <div class="card">
+                        <h3>Результаты сравнения</h3>
+                        <pre>${comparison}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        // Генерация отчёта
+        async function generateReport() {
+            const url = document.getElementById('reportUrl').value;
+            const clientName = document.getElementById('clientName').value;
+            const businessType = document.getElementById('businessType').value;
+
+            if (!url || !clientName) {
+                showError('reportResults', 'Заполните все обязательные поля');
+                return;
+            }
+
+            showLoading('reportResults');
+
+            try {
+                const content = await parseWebsite(url);
+                const report = await analyzeWithAI(
+                    `Создай профессиональный отчёт для клиента "${clientName}" (бизнес: ${businessType}).
+
+                    Структура отчёта:
+                    1. Исполнительное резюме (2-3 предложения)
+                    2. Текущее состояние (оценка 0-100)
+                    3. Критические проблемы (топ-3)
+                    4. Quick wins (что можно улучшить быстро)
+                    5. Долгосрочная стратегия
+                    6. Ожидаемые результаты (в цифрах)
+
+                    Формат: JSON`,
+                    content
+                );
+
+                displayReport(report, clientName);
+            } catch (error) {
+                showError('reportResults', error.message);
+            }
+        }
+
+        function displayReport(report, clientName) {
+            try {
+                const data = JSON.parse(report);
+
+                let html = `
+                    <div class="card" style="background: rgba(102, 126, 234, 0.1);">
+                        <h2 style="color: #667eea;">Аудит сайта для ${clientName}</h2>
+                        <p style="color: #b0b0b0; font-size: 1.1em; margin-top: 10px;">${data.executive_summary}</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>📊 Текущее состояние</h3>
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="font-size: 4em; color: #667eea; font-weight: bold;">${data.current_score}/100</div>
+                            <div class="progress-bar" style="margin-top: 20px;">
+                                <div class="progress-fill" style="width: ${data.current_score}%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>🚨 Критические проблемы</h3>
+                `;
+
+                data.critical_issues.forEach((issue, index) => {
+                    html += `
+                        <div class="tip" style="background: rgba(239, 68, 68, 0.1); border-color: #ef4444;">
+                            <div class="tip-title" style="color: #fca5a5;">Проблема ${index + 1}: ${issue.title}</div>
+                            ${issue.description}
+                        </div>
+                    `;
+                });
+
+                html += `
+                    </div>
+
+                    <div class="two-column">
+                        <div class="card">
+                            <h3>⚡ Quick Wins</h3>
+                `;
+
+                data.quick_wins.forEach(win => {
+                    html += `<div class="badge badge-success">${win}</div>`;
+                });
+
+                html += `
+                        </div>
+                        <div class="card">
+                            <h3>🎯 Долгосрочная стратегия</h3>
+                `;
+
+                data.long_term.forEach(strategy => {
+                    html += `<div class="badge badge-warning">${strategy}</div>`;
+                });
+
+                html += `
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>💰 Ожидаемые результаты</h3>
+                        <div class="metric">
+                            <span class="metric-label">Рост конверсии</span>
+                            <span class="metric-value" style="color: #86efac;">+${data.expected_results.conversion_increase}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Рост трафика</span>
+                            <span class="metric-value" style="color: #86efac;">+${data.expected_results.traffic_increase}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Срок реализации</span>
+                            <span class="metric-value">${data.expected_results.timeline}</span>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('reportResults').innerHTML = html;
+
+            } catch (error) {
+                document.getElementById('reportResults').innerHTML = `
+                    <div class="card">
+                        <h3>Отчёт</h3>
+                        <pre>${report}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        // Финансовый прогноз
+        async function calculateForecast() {
+            const url = document.getElementById('forecastUrl').value;
+            const traffic = parseInt(document.getElementById('currentTraffic').value);
+            const avgCheck = parseInt(document.getElementById('avgCheck').value);
+            const conversion = parseFloat(document.getElementById('currentConversion').value);
+            const budget = parseInt(document.getElementById('budget').value);
+
+            if (!url || !traffic || !avgCheck || !conversion || !budget) {
+                showError('forecastResults', 'Заполните все поля');
+                return;
+            }
+
+            showLoading('forecastResults');
+
+            try {
+                const content = await parseWebsite(url);
+                const forecast = await analyzeWithAI(
+                    `На основе анализа сайта рассчитай финансовый прогноз.
+
+                    Исходные данные:
+                    - Трафик: ${traffic} визитов/мес
+                    - Средний чек: ${avgCheck} руб
+                    - Конверсия: ${conversion}%
+                    - Бюджет на улучшения: ${budget} руб
+
+                    Рассчитай:
+                    1. Текущая выручка
+                    2. Реалистичный рост конверсии после оптимизации
+                    3. Новая выручка
+                    4. ROI инвестиции
+                    5. Срок окупаемости
+                    6. Прогноз на 6 месяцев (помесячно)
+
+                    Формат: JSON`,
+                    content
+                );
+
+                displayForecast(forecast, { traffic, avgCheck, conversion, budget });
+            } catch (error) {
+                showError('forecastResults', error.message);
+            }
+        }
+
+        function displayForecast(forecast, inputs) {
+            try {
+                const data = JSON.parse(forecast);
+
+                const currentRevenue = inputs.traffic * (inputs.conversion / 100) * inputs.avgCheck;
+
+                let html = `
+                    <div class="comparison-grid">
+                        <div class="card">
+                            <h3>💸 Текущая выручка</h3>
+                            <p style="font-size: 2.5em; color: #764ba2; text-align: center; font-weight: bold;">
+                                ${currentRevenue.toLocaleString('ru-RU')} ₽
+                            </p>
+                            <p style="text-align: center; color: #b0b0b0;">в месяц</p>
+                        </div>
+                        <div class="card">
+                            <h3>🚀 Прогноз после оптимизации</h3>
+                            <p style="font-size: 2.5em; color: #667eea; text-align: center; font-weight: bold;">
+                                ${data.projected_revenue.toLocaleString('ru-RU')} ₽
+                            </p>
+                            <p style="text-align: center; color: #86efac;">+${((data.projected_revenue - currentRevenue) / currentRevenue * 100).toFixed(1)}%</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>📈 Ключевые метрики</h3>
+                        <div class="metric">
+                            <span class="metric-label">Рост конверсии</span>
+                            <span class="metric-value">${inputs.conversion}% → ${data.new_conversion}%</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">ROI инвестиции</span>
+                            <span class="metric-value" style="color: #86efac;">${data.roi}%</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Срок окупаемости</span>
+                            <span class="metric-value">${data.payback_period}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Дополнительная прибыль за 6 мес</span>
+                            <span class="metric-value" style="color: #86efac;">+${data.six_month_profit.toLocaleString('ru-RU')} ₽</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>📊 Прогноз на 6 месяцев</h3>
+                        <div class="chart-container">
+                            <canvas id="forecastChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>📅 Помесячный прогноз</h3>
+                        <table class="forecast-table">
+                            <thead>
+                                <tr>
+                                    <th>Месяц</th>
+                                    <th>Выручка</th>
+                                    <th>Рост</th>
+                                    <th>Прибыль</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                data.monthly_forecast.forEach((month, index) => {
+                    html += `
+                        <tr>
+                            <td>Месяц ${index + 1}</td>
+                            <td>${month.revenue.toLocaleString('ru-RU')} ₽</td>
+                            <td><span class="badge badge-success">+${month.growth}%</span></td>
+                            <td style="color: #86efac;">${month.profit.toLocaleString('ru-RU')} ₽</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                document.getElementById('forecastResults').innerHTML = html;
+
+                // График прогноза
+                const ctx = document.getElementById('forecastChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.monthly_forecast.map((_, i) => `Месяц ${i + 1}`),
+                        datasets: [{
+                            label: 'Выручка',
+                            data: data.monthly_forecast.map(m => m.revenue),
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }, {
+                            label: 'Текущая выручка',
+                            data: new Array(6).fill(currentRevenue),
+                            borderColor: '#764ba2',
+                            borderDash: [5, 5],
+                            backgroundColor: 'transparent'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: '#b0b0b0',
+                                    callback: function(value) {
+                                        return value.toLocaleString('ru-RU') + ' ₽';
+                                    }
+                                },
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            },
+                            x: {
+                                ticks: { color: '#b0b0b0' },
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: { color: '#e0e0e0' }
+                            }
+                        }
+                    }
+                });
+
+            } catch (error) {
+                document.getElementById('forecastResults').innerHTML = `
+                    <div class="card">
+                        <h3>Прогноз</h3>
+                        <pre>${forecast}</pre>
+                    </div>
+                `;
+            }
+        }
     </script>
 </body>
 </html>
