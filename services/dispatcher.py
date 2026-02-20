@@ -1,34 +1,41 @@
 """
-Dispatcher — the single brain of the agent.
+Dispatcher — мозг агента.
 
-Receives a customer message + conversation context, calls the LLM,
-parses the structured JSON response, and routes to the appropriate action:
-  - plain reply  → send text back via Chatwoot API
-  - BOOKING      → booking_logic → yclients_client
-  - HANDOFF      → mark conversation in Chatwoot for a human agent
+Получает сообщение клиента + контекст диалога, вызывает LLM,
+разбирает структурированный JSON-ответ и маршрутизирует действие:
+  - plain reply       → отправить текст через reply_fn (или Chatwoot по умолчанию)
+  - intent=BOOKING    → booking_logic → yclients_client
+  - intent=HANDOFF    → передать оператору через handoff_fn (или Chatwoot по умолчанию)
 
-Session memory (slots + history) is kept in a plain in-process dict keyed
-by conversation_id.  Replace with Redis for multi-process deployments.
+Мульти-тенантность:
+  - Передайте tenant_id, чтобы загрузить конкретный конфиг клиента.
+  - Если tenant_id не передан — используется TENANT из .env (обратная совместимость).
 
-NOTE: booking_logic and yclients_client are stubbed in this first iteration.
-They will be implemented in modules 3-4.
+Мульти-канальность (Chatwoot, Jivo и т.д.):
+  - Передайте reply_fn и handoff_fn, чтобы использовать нужный канал.
+  - Если не переданы — по умолчанию используется Chatwoot (исходное поведение).
+
+Сессионная память (слоты + история) хранится в памяти процесса.
+Для мульти-процессных деплоев замените на Redis.
 """
 
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from services.llm_client import SYSTEM_PROMPT_RU, Message, create_llm_client, parse_llm_json
-from utils.tenant_loader import get_active_tenant
+from utils.tenant_loader import get_active_tenant, load_tenant
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# In-memory session store  {conversation_id: {"history": [...], "slots": {...}}}
+# In-memory session store
+# Ключ — conversation_id (int для Chatwoot, str для Jivo, None если неизвестен)
 # ---------------------------------------------------------------------------
 
-_sessions: dict[int | None, dict[str, Any]] = {}
+_sessions: dict[int | str | None, dict[str, Any]] = {}
 
 _llm_client = None  # lazy singleton
 
@@ -41,34 +48,60 @@ def _get_llm():
 
 
 # ---------------------------------------------------------------------------
-# Main entry point called by webhook.py
+# Главная точка входа
 # ---------------------------------------------------------------------------
 
 
 async def handle_message(
-    conversation_id: int | None,
+    conversation_id: int | str | None,
     message: str,
     contact: dict[str, Any],
+    tenant_id: str | None = None,
+    reply_fn: Callable[[str], Awaitable[None]] | None = None,
+    handoff_fn: Callable[[], Awaitable[None]] | None = None,
 ) -> None:
     """
-    Process one incoming customer message end-to-end.
+    Обработать одно входящее сообщение клиента от начала до конца.
 
     Args:
-        conversation_id: Chatwoot conversation identifier (used as session key).
-        message: Raw text from the customer.
-        contact: Chatwoot contact dict (may contain name, phone, email).
+        conversation_id: Идентификатор диалога (int для Chatwoot, str для Jivo).
+                         Используется как ключ сессии.
+        message:         Текст сообщения от клиента.
+        contact:         Данные контакта (name, phone_number, email).
+        tenant_id:       ID тенанта для загрузки нужного конфига. Если None —
+                         берётся из переменной TENANT в .env.
+        reply_fn:        Async-функция для отправки ответа клиенту.
+                         Если None — используется Chatwoot (исходное поведение).
+        handoff_fn:      Async-функция для передачи диалога оператору.
+                         Если None — используется Chatwoot (исходное поведение).
     """
     session = _sessions.setdefault(conversation_id, {"history": [], "slots": _empty_slots()})
 
-    # Pre-fill slots from Chatwoot contact data if not yet set
+    # Заполнить слоты из данных контакта (если они ещё не заполнены)
     _merge_contact_into_slots(session["slots"], contact)
 
-    # Append customer turn to history
+    # Добавить сообщение клиента в историю
     session["history"].append({"role": "user", "content": message})
 
-    tenant = get_active_tenant()
+    # Загрузить конфиг тенанта
+    tenant = load_tenant(tenant_id) if tenant_id else get_active_tenant()
     system_prompt = _build_system_prompt(tenant)
 
+    # --- Локальные обёртки: выбирают канал (переданный или Chatwoot по умолчанию) ---
+
+    async def send_reply(text: str) -> None:
+        if reply_fn is not None:
+            await reply_fn(text)
+        else:
+            await _chatwoot_send_reply(conversation_id, text)
+
+    async def do_handoff(reason: str | None = None) -> None:
+        if handoff_fn is not None:
+            await handoff_fn()
+        else:
+            await _chatwoot_trigger_handoff(conversation_id, reason)
+
+    # --- Вызов LLM ---
     try:
         raw = await _get_llm().ask(
             messages=session["history"],
@@ -77,8 +110,7 @@ async def handle_message(
         parsed = parse_llm_json(raw)
     except (ValueError, Exception) as exc:
         logger.error("LLM error for conversation %s: %s", conversation_id, exc)
-        # Fallback: apologise and request human takeover
-        await _send_reply(conversation_id, "Извините, произошла техническая ошибка. Соединяю с менеджером.")
+        await send_reply("Извините, произошла техническая ошибка. Соединяю с менеджером.")
         return
 
     reply_text: str = parsed.get("reply_text", "")
@@ -87,10 +119,10 @@ async def handle_message(
     need_handoff: bool = parsed.get("need_handoff", False)
     handoff_reason: str | None = parsed.get("handoff_reason")
 
-    # Merge newly extracted slots into session
+    # Добавить извлечённые слоты в сессию
     _merge_slots(session["slots"], llm_slots)
 
-    # Append assistant turn
+    # Добавить ответ ассистента в историю
     session["history"].append({"role": "assistant", "content": reply_text})
 
     logger.info(
@@ -100,23 +132,23 @@ async def handle_message(
         need_handoff,
     )
 
-    # --- Route by intent ---
+    # --- Маршрутизация по intent ---
 
     if need_handoff or intent == "HANDOFF_TO_HUMAN":
-        await _send_reply(conversation_id, reply_text)
-        await _trigger_handoff(conversation_id, handoff_reason)
+        await send_reply(reply_text)
+        await do_handoff(handoff_reason)
         return
 
     if intent == "BOOKING":
-        await _handle_booking(conversation_id, session["slots"], reply_text)
+        await _handle_booking(conversation_id, session["slots"], reply_text, send_reply, do_handoff)
         return
 
-    # Default: send the reply text as-is
-    await _send_reply(conversation_id, reply_text)
+    # По умолчанию: просто отправить ответ
+    await send_reply(reply_text)
 
 
 # ---------------------------------------------------------------------------
-# Slot helpers
+# Слоты
 # ---------------------------------------------------------------------------
 
 
@@ -134,7 +166,7 @@ def _empty_slots() -> dict[str, Any]:
 
 
 def _merge_slots(existing: dict[str, Any], incoming: dict[str, Any]) -> None:
-    """Overwrite only non-null incoming values so slots accumulate across turns."""
+    """Перезаписываем только непустые значения, чтобы слоты накапливались по ходу диалога."""
     for key, value in incoming.items():
         if value is not None:
             existing[key] = value
@@ -150,7 +182,7 @@ def _merge_contact_into_slots(slots: dict[str, Any], contact: dict[str, Any]) ->
 
 
 # ---------------------------------------------------------------------------
-# System prompt builder
+# Построение system prompt
 # ---------------------------------------------------------------------------
 
 
@@ -169,45 +201,53 @@ def _build_system_prompt(tenant: dict[str, Any]) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Side-effect implementations
+# Chatwoot-специфичные реализации (используются по умолчанию, если reply_fn не передан)
 # ---------------------------------------------------------------------------
 
 
-async def _send_reply(conversation_id: int | None, text: str) -> None:
-    """Send reply back to Chatwoot."""
+async def _chatwoot_send_reply(conversation_id: int | str | None, text: str) -> None:
+    """Отправить ответ в Chatwoot. Используется, если reply_fn не передан."""
     logger.info("REPLY to conv %s: %.120s", conversation_id, text)
     if conversation_id is not None:
         from services import chatwoot_client  # noqa: PLC0415
 
-        await chatwoot_client.send_message(conversation_id, text)
+        await chatwoot_client.send_message(int(conversation_id), text)
 
 
-async def _trigger_handoff(conversation_id: int | None, reason: str | None) -> None:
-    """Assign conversation to a human agent in Chatwoot."""
+async def _chatwoot_trigger_handoff(
+    conversation_id: int | str | None, reason: str | None
+) -> None:
+    """Передать диалог оператору в Chatwoot. Используется, если handoff_fn не передан."""
     logger.info("HANDOFF conv %s, reason: %s", conversation_id, reason)
     if conversation_id is not None:
         from services import chatwoot_client  # noqa: PLC0415
 
-        await chatwoot_client.assign_to_team(conversation_id, reason)
+        await chatwoot_client.assign_to_team(int(conversation_id), reason)
+
+
+# ---------------------------------------------------------------------------
+# Обработка бронирования
+# ---------------------------------------------------------------------------
 
 
 async def _handle_booking(
-    conversation_id: int | None,
+    conversation_id: int | str | None,
     slots: dict[str, Any],
     reply_text: str,
+    send_reply: Callable[[str], Awaitable[None]],
+    do_handoff: Callable[..., Awaitable[None]],
 ) -> None:
-    """Validate slots and create a booking in Yclients, then reply to the customer."""
+    """Проверить слоты и создать бронирование в Yclients, затем ответить клиенту."""
     from services import booking_logic  # noqa: PLC0415
 
     result = await booking_logic.validate_and_book(slots)
 
     if result["success"]:
-        await _send_reply(conversation_id, result["message"])
+        await send_reply(result["message"])
     else:
-        # If LLM already composed a reply, prefer it; otherwise use logic's message
         customer_msg = reply_text or result["message"]
-        await _send_reply(conversation_id, customer_msg)
+        await send_reply(customer_msg)
 
-        # Escalate to human if Yclients itself failed (not just missing slots)
+        # Эскалировать к человеку, если ошибка не в валидации слотов/данных
         if result["error"] not in ("missing_slots", "no_room", "outside_hours"):
-            await _trigger_handoff(conversation_id, reason=result["error"])
+            await do_handoff(result["error"])

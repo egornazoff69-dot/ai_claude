@@ -1,0 +1,43 @@
+{
+  "_comment": "Пример конфига для нового клиента. Скопируйте этот файл, переименуйте в <ваш_id>.json и заполните поля.",
+
+  "tenant_id": "example_client",
+  "name": "Название коворкинга клиента",
+  "timezone": "Europe/Moscow",
+  "currency": "RUB",
+  "tone": "friendly_professional",
+
+  "jivo_token": "ВСТАВЬТЕ_ТОКЕН_JIVO_БОТА_ЗДЕСЬ",
+
+  "rooms": [
+    {
+      "id": "room_1",
+      "type": "meeting_room",
+      "name": "Переговорная",
+      "capacity": 6,
+      "price_per_hour": 1000,
+      "price_per_day": null,
+      "amenities": ["Wi-Fi", "Проектор", "Маркерная доска"],
+      "description": "Переговорная комната на 6 человек."
+    }
+  ],
+
+  "working_hours": {
+    "monday":    {"open": "09:00", "close": "21:00"},
+    "tuesday":   {"open": "09:00", "close": "21:00"},
+    "wednesday": {"open": "09:00", "close": "21:00"},
+    "thursday":  {"open": "09:00", "close": "21:00"},
+    "friday":    {"open": "09:00", "close": "21:00"},
+    "saturday":  {"open": "10:00", "close": "18:00"},
+    "sunday":    null
+  },
+
+  "booking_rules": {
+    "min_duration_hours": 1,
+    "max_advance_days": 30,
+    "cancellation_hours_before": 24,
+    "required_slots": ["name", "phone", "date", "time", "people_count", "room_id"]
+  },
+
+  "agent_instructions": "Опишите здесь особые правила и инструкции для ИИ-агента этого клиента."
+}
