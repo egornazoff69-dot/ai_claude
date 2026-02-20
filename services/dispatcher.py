@@ -169,20 +169,26 @@ def _build_system_prompt(tenant: dict[str, Any]) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Side-effect stubs (Chatwoot + booking — implemented in later modules)
+# Side-effect implementations
 # ---------------------------------------------------------------------------
 
 
 async def _send_reply(conversation_id: int | None, text: str) -> None:
-    """Send reply back to Chatwoot. Stub — full implementation in chatwoot_client.py."""
-    logger.info("REPLY to conv %s: %s", conversation_id, text[:120])
-    # TODO: implement Chatwoot API call
+    """Send reply back to Chatwoot."""
+    logger.info("REPLY to conv %s: %.120s", conversation_id, text)
+    if conversation_id is not None:
+        from services import chatwoot_client  # noqa: PLC0415
+
+        await chatwoot_client.send_message(conversation_id, text)
 
 
 async def _trigger_handoff(conversation_id: int | None, reason: str | None) -> None:
     """Assign conversation to a human agent in Chatwoot."""
     logger.info("HANDOFF conv %s, reason: %s", conversation_id, reason)
-    # TODO: implement Chatwoot assign-to-agent API call
+    if conversation_id is not None:
+        from services import chatwoot_client  # noqa: PLC0415
+
+        await chatwoot_client.assign_to_team(conversation_id, reason)
 
 
 async def _handle_booking(
@@ -190,7 +196,18 @@ async def _handle_booking(
     slots: dict[str, Any],
     reply_text: str,
 ) -> None:
-    """Validate slots and create a booking in Yclients."""
-    await _send_reply(conversation_id, reply_text)
-    logger.info("BOOKING slots for conv %s: %s", conversation_id, slots)
-    # TODO: call booking_logic.validate_and_book(slots)
+    """Validate slots and create a booking in Yclients, then reply to the customer."""
+    from services import booking_logic  # noqa: PLC0415
+
+    result = await booking_logic.validate_and_book(slots)
+
+    if result["success"]:
+        await _send_reply(conversation_id, result["message"])
+    else:
+        # If LLM already composed a reply, prefer it; otherwise use logic's message
+        customer_msg = reply_text or result["message"]
+        await _send_reply(conversation_id, customer_msg)
+
+        # Escalate to human if Yclients itself failed (not just missing slots)
+        if result["error"] not in ("missing_slots", "no_room", "outside_hours"):
+            await _trigger_handoff(conversation_id, reason=result["error"])
