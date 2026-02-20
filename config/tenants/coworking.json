@@ -1,79 +1,498 @@
 {
-  "tenant_id": "coworking",
-  "name": "CoWork Space",
-  "timezone": "Europe/Moscow",
-  "currency": "RUB",
-  "tone": "friendly_professional",
-
+  "id": "ricabs_coworking_moscow",
+  "name": "Кабинеты Рихтера",
+  "description": "Почасовая аренда уютных кабинетов в центре Москвы для психологов, телесных и других помогающих специалистов.",
+  "locations": [
+    {
+      "id": "kurskaya_lyalin",
+      "name": "Курская — Лялин переулок, 21",
+      "metro": ["Курская"],
+      "address": "Москва, Лялин переулок, д. 21",
+      "features": [
+        "бесплатная парковка",
+        "усиленная шумоизоляция",
+        "вход по коду без администратора",
+        "кабинеты без камер видеонаблюдения",
+        "высокоскоростной интернет"
+      ],
+      "working_hours": {
+        "monday": "08:00-22:00",
+        "tuesday": "08:00-22:00",
+        "wednesday": "08:00-22:00",
+        "thursday": "08:00-22:00",
+        "friday": "08:00-22:00",
+        "saturday": "09:00-22:00",
+        "sunday": "09:00-22:00"
+      },
+      "rooms": [
+        {
+          "id": "lyal_room_1",
+          "name": "Лялин кабинет №1",
+          "type": "individual",
+          "purpose": [
+            "психолог",
+            "психотерапевт",
+            "коуч",
+            "индивидуальные консультации"
+          ],
+          "capacity": 2,
+          "hourly_price": 800,
+          "min_booking_hours": 1,
+          "max_booking_hours": 8,
+          "features": [
+            "уютный интерьер",
+            "2–3 посадочных места",
+            "шумоизоляция",
+            "бумага, ручки, салфетки",
+            "чай/кофе, вода"
+          ],
+          "yclients": {
+            "company_id": 0,
+            "service_id": 0,
+            "resource_id": 0
+          }
+        },
+        {
+          "id": "lyal_room_2",
+          "name": "Лялин кабинет №2",
+          "type": "individual",
+          "purpose": [
+            "психолог",
+            "телесный терапевт",
+            "телесные практики",
+            "массаж"
+          ],
+          "capacity": 3,
+          "hourly_price": 900,
+          "min_booking_hours": 1,
+          "max_booking_hours": 8,
+          "features": [
+            "диван/кушетка",
+            "место для телесной работы",
+            "пространство для массажа",
+            "бумага, ручки",
+            "интернет"
+          ],
+          "yclients": {
+            "company_id": 0,
+            "service_id": 0,
+            "resource_id": 0
+          }
+        },
+        {
+          "id": "lyal_room_3",
+          "name": "Лялин кабинет №3",
+          "type": "individual",
+          "purpose": [
+            "психолог",
+            "коуч",
+            "онлайн‑сессии"
+          ],
+          "capacity": 2,
+          "hourly_price": 800,
+          "min_booking_hours": 1,
+          "max_booking_hours": 8,
+          "features": [
+            "тихий кабинет",
+            "подходит для онлайн‑формата",
+            "рабочее место с хорошим светом",
+            "интернет"
+          ],
+          "yclients": {
+            "company_id": 0,
+            "service_id": 0,
+            "resource_id": 0
+          }
+        },
+        {
+          "id": "lyal_room_4",
+          "name": "Лялин кабинет №4",
+          "type": "individual",
+          "purpose": [
+            "психолог",
+            "коуч",
+            "индивидуальные консультации"
+          ],
+          "capacity": 3,
+          "hourly_price": 900,
+          "min_booking_hours": 1,
+          "max_booking_hours": 8,
+          "features": [
+            "уютный интерьер",
+            "несколько посадочных мест",
+            "шумоизоляция",
+            "бумага, ручки, салфетки"
+          ],
+          "yclients": {
+            "company_id": 0,
+            "service_id": 0,
+            "resource_id": 0
+          }
+        },
+        {
+          "id": "lyal_room_5",
+          "name": "Лялин кабинет №5",
+          "type": "individual",
+          "purpose": [
+            "телесные практики",
+            "массаж",
+            "остеопат",
+            "кинезиолог"
+          ],
+          "capacity": 3,
+          "hourly_price": 1000,
+          "min_booking_hours": 1,
+          "max_booking_hours": 8,
+          "features": [
+            "мобильный массажный стол по запросу",
+            "пространство для телесной терапии",
+            "подходит для остеопатов и кинезиологов"
+          ],
+          "yclients": {
+            "company_id": 0,
+            "service_id": 0,
+            "resource_id": 0
+          }
+        },
+        {
+          "id": "lyal_room_6",
+          "name": "Лялин кабинет №6",
+          "type": "individual",
+          "purpose": [
+            "психолог",
+            "коуч",
+            "интервью",
+            "онлайн‑формат"
+          ],
+          "capacity": 3,
+          "hourly_price": 900,
+          "min_booking_hours": 1,
+          "max_booking_hours": 8,
+          "features": [
+            "подходит для интервью и видеозаписей",
+            "приятный интерьер",
+            "достаточно света и пространства"
+          ],
+          "yclients": {
+            "company_id": 0,
+            "service_id": 0,
+            "resource_id": 0
+          }
+        },
+        {
+          "id": "lyal_room_7",
+          "name": "Лялин кабинет №7 (мини‑группы)",
+          "type": "group",
+          "purpose": [
+            "мини‑группы",
+            "групповые консультации",
+            "мастер‑классы"
+          ],
+          "capacity": 6,
+          "hourly_price": 1300,
+          "min_booking_hours": 2,
+          "max_booking_hours": 8,
+          "features": [
+            "диваны и стулья",
+            "шумоизоляция",
+            "подходит для небольших групп",
+            "возможность круговой рассадки"
+          ],
+          "yclients": {
+            "company_id": 0,
+            "service_id": 0,
+            "resource_id": 0
+          }
+        },
+        {
+          "id": "lyal_room_8",
+          "name": "Лялин кабинет №8 (групповой)",
+          "type": "group",
+          "purpose": [
+            "групповые занятия",
+            "йога",
+            "медитации",
+            "тренинги"
+          ],
+          "capacity": 10,
+          "hourly_price": 1500,
+          "min_booking_hours": 2,
+          "max_booking_hours": 8,
+          "features": [
+            "просторное помещение",
+            "возможность работать на полу/матах",
+            "подходит для телесных и групповых практик"
+          ],
+          "yclients": {
+            "company_id": 0,
+            "service_id": 0,
+            "resource_id": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "smolenskaya",
+      "name": "Смоленская — 2-й Смоленский пер., 1/4",
+      "metro": ["Смоленская"],
+      "address": "Москва, 2-й Смоленский переулок, д. 1/4",
+      "features": [
+        "3 минуты от метро Смоленская",
+        "высокие потолки",
+        "кабинеты без камер видеонаблюдения",
+        "шумоизоляция",
+        "высокоскоростной интернет"
+      ],
+      "working_hours": {
+        "monday": "08:00-22:00",
+        "tuesday": "08:00-22:00",
+        "wednesday": "08:00-22:00",
+        "thursday": "08:00-22:00",
+        "friday": "08:00-22:00",
+        "saturday": "09:00-22:00",
+        "sunday": "09:00-22:00"
+      },
+      "rooms": [
+        {
+          "id": "smol_room_1",
+          "name": "Смоленская кабинет №1",
+          "type": "individual",
+          "purpose": [
+            "психолог",
+            "коуч",
+            "индивидуальные консультации"
+          ],
+          "capacity": 3,
+          "hourly_price": 900,
+          "min_booking_hours": 1,
+          "max_booking_hours": 8,
+          "features": [
+            "уютный интерьер",
+            "несколько посадочных мест",
+            "бумага, ручки, салфетки",
+            "чай/кофе, вода"
+          ],
+          "yclients": {
+            "company_id": 0,
+            "service_id": 0,
+            "resource_id": 0
+          }
+        },
+        {
+          "id": "smol_room_2",
+          "name": "Смоленская кабинет №2",
+          "type": "individual",
+          "purpose": [
+            "психолог",
+            "коуч",
+            "телесные практики"
+          ],
+          "capacity": 3,
+          "hourly_price": 900,
+          "min_booking_hours": 1,
+          "max_booking_hours": 8,
+          "features": [
+            "диван/кушетка",
+            "подходит для телесной терапии",
+            "пространство для работы с телом",
+            "интернет"
+          ],
+          "yclients": {
+            "company_id": 0,
+            "service_id": 0,
+            "resource_id": 0
+          }
+        },
+        {
+          "id": "smol_room_3",
+          "name": "Смоленская кабинет №3",
+          "type": "individual",
+          "purpose": [
+            "психолог",
+            "коуч",
+            "онлайн‑сессии"
+          ],
+          "capacity": 2,
+          "hourly_price": 850,
+          "min_booking_hours": 1,
+          "max_booking_hours": 8,
+          "features": [
+            "тихий кабинет",
+            "хороший свет",
+            "подходит для онлайн‑формата",
+            "рабочее место для ноутбука"
+          ],
+          "yclients": {
+            "company_id": 0,
+            "service_id": 0,
+            "resource_id": 0
+          }
+        },
+        {
+          "id": "smol_room_4",
+          "name": "Смоленская кабинет №4",
+          "type": "individual",
+          "purpose": [
+            "психолог",
+            "коуч",
+            "психиатр",
+            "медицинский специалист"
+          ],
+          "capacity": 3,
+          "hourly_price": 900,
+          "min_booking_hours": 1,
+          "max_booking_hours": 8,
+          "features": [
+            "более строгий интерьер",
+            "подходит для медицинской практики",
+            "шумоизоляция",
+            "бумага, ручки"
+          ],
+          "yclients": {
+            "company_id": 0,
+            "service_id": 0,
+            "resource_id": 0
+          }
+        },
+        {
+          "id": "smol_room_5",
+          "name": "Смоленская кабинет №5 (телесный)",
+          "type": "individual",
+          "purpose": [
+            "телесные практики",
+            "массаж",
+            "остеопат",
+            "кинезиолог"
+          ],
+          "capacity": 3,
+          "hourly_price": 1000,
+          "min_booking_hours": 1,
+          "max_booking_hours": 8,
+          "features": [
+            "возможность установки массажного стола",
+            "пространство для телесной работы",
+            "подходит для остеопатов и кинезиологов"
+          ],
+          "yclients": {
+            "company_id": 0,
+            "service_id": 0,
+            "resource_id": 0
+          }
+        },
+        {
+          "id": "smol_group_1",
+          "name": "Смоленская групповой зал",
+          "type": "group",
+          "purpose": [
+            "групповые занятия",
+            "тренинги",
+            "мастер‑классы",
+            "йога",
+            "медитации"
+          ],
+          "capacity": 12,
+          "hourly_price": 1500,
+          "min_booking_hours": 2,
+          "max_booking_hours": 8,
+          "features": [
+            "просторный зал",
+            "стулья и маты",
+            "флипчарт/маркерная доска",
+            "проектор по запросу",
+            "подходит для групповых форматов до 10–12 человек"
+          ],
+          "yclients": {
+            "company_id": 0,
+            "service_id": 0,
+            "resource_id": 0
+          }
+        }
+      ]
+    },
+    {
+      {
+  "id": "kazakova",
+  "name": "Курская — Казакова, 7",
+  "metro": ["Курская"],
+  "address": "Москва, ул. Казакова, д. 7",
+  "features": [
+    "премиальный бизнес‑центр",
+    "пространство формата loft",
+    "кабинеты без камер видеонаблюдения",
+    "шумоизоляция",
+    "высокоскоростной интернет"
+  ],
+  "working_hours": {
+    "monday": "08:00-22:00",
+    "tuesday": "08:00-22:00",
+    "wednesday": "08:00-22:00",
+    "thursday": "08:00-22:00",
+    "friday": "08:00-22:00",
+    "saturday": "09:00-22:00",
+    "sunday": "09:00-22:00"
+  },
   "rooms": [
     {
-      "id": "open_desk_1",
-      "type": "open_space",
-      "name": "Открытое рабочее место",
-      "capacity": 1,
-      "price_per_hour": 300,
-      "price_per_day": 1500,
-      "amenities": ["Wi-Fi", "Розетки", "Принтер", "Кофе/чай"],
-      "description": "Удобное место в общем зале, тихая рабочая атмосфера."
-    },
-    {
-      "id": "meeting_room_1",
-      "type": "meeting_room",
-      "name": "Переговорная «Альфа»",
-      "capacity": 8,
-      "price_per_hour": 1500,
-      "price_per_day": null,
-      "amenities": ["Wi-Fi", "Проектор", "Маркерная доска", "Видеосвязь", "Кофе/чай"],
-      "description": "Изолированная переговорная на 8 человек, идеально для встреч и презентаций."
-    },
-    {
-      "id": "meeting_room_2",
-      "type": "meeting_room",
-      "name": "Переговорная «Бета»",
-      "capacity": 4,
-      "price_per_hour": 900,
-      "price_per_day": null,
-      "amenities": ["Wi-Fi", "Телевизор 55″", "Маркерная доска"],
-      "description": "Камерная переговорная на 4 человека — для небольших команд и переговоров."
-    },
-    {
-      "id": "private_office_1",
-      "type": "private_office",
-      "name": "Приватный кабинет №1",
+      "id": "kaz_premium_1",
+      "name": "Премиум кабинет в бизнес‑центре Казакова",
+      "type": "individual",
+      "purpose": [
+        "психолог",
+        "коуч",
+        "индивидуальные консультации",
+        "онлайн‑сессии"
+      ],
       "capacity": 3,
-      "price_per_hour": 1200,
-      "price_per_day": 5000,
-      "amenities": ["Wi-Fi", "Розетки", "Замок", "Принтер", "Кофе/чай"],
-      "description": "Закрытый кабинет для концентрированной работы или конфиденциальных звонков."
-    },
-    {
-      "id": "event_hall_1",
-      "type": "event_hall",
-      "name": "Конференц-зал",
-      "capacity": 30,
-      "price_per_hour": 4000,
-      "price_per_day": 25000,
-      "amenities": ["Wi-Fi", "Проектор 4K", "Микрофон", "Акустика", "Сцена", "Стулья"],
-      "description": "Большой зал для мероприятий, воркшопов и корпоративных тренингов."
+      "hourly_price": 1200,
+      "min_booking_hours": 1,
+      "max_booking_hours": 8,
+      "features": [
+        "премиальный уютный интерьер",
+        "приватность и тишина",
+        "удобные кресла и диван",
+        "усиленная шумоизоляция",
+        "бумага, ручки, салфетки",
+        "чай/кофе, вода"
+      ],
+      "yclients": {
+        "company_id": 0,
+        "service_id": 0,
+        "resource_id": 0
+      }
     }
+  ]
+}
   ],
-
-  "working_hours": {
-    "monday":    {"open": "08:00", "close": "22:00"},
-    "tuesday":   {"open": "08:00", "close": "22:00"},
-    "wednesday": {"open": "08:00", "close": "22:00"},
-    "thursday":  {"open": "08:00", "close": "22:00"},
-    "friday":    {"open": "08:00", "close": "22:00"},
-    "saturday":  {"open": "10:00", "close": "20:00"},
-    "sunday":    {"open": "10:00", "close": "18:00"}
-  },
-
   "booking_rules": {
-    "min_duration_hours": 1,
-    "max_advance_days": 60,
-    "cancellation_hours_before": 24,
-    "required_slots": ["name", "phone", "date", "time", "people_count", "room_id"]
+    "default_min_hours": 1,
+    "same_day_min_notice_minutes": 120,
+    "max_days_in_advance": 30,
+    "priorities": {
+      "primary": "capacity",
+      "secondary": "location_proximity"
+    }
   },
-
-  "agent_instructions": "Предлагай переговорные для групп от 2 человек. Для одного человека рекомендуй открытое место или приватный кабинет. При вопросах о скидках — стандартная скидка 10% при бронировании от 3 часов, всё остальное — менеджер."
+  "dialog_settings": {
+    "language": "ru",
+    "tone": "доброжелательный, спокойный, уверенный",
+    "goals": [
+      "помочь выбрать подходящий кабинет",
+      "ответить на частые вопросы по условиям аренды",
+      "собрать данные для бронирования",
+      "создать запись в Yclients при согласии клиента"
+    ],
+    "required_slots_for_booking": [
+      "name",
+      "phone",
+      "date",
+      "time",
+      "duration_hours",
+      "location_id",
+      "room_id"
+    ],
+    "optional_slots": [
+      "email",
+      "comment"
+    ]
+  }
 }
