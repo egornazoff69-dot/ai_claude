@@ -2,9 +2,16 @@
 Точка входа FastAPI-приложения.
 
 Доступные эндпоинты:
-  GET  /health            — проверка работоспособности сервера
-  POST /webhook           — входящие события от Chatwoot
-  POST /jivo/{tenant_id}  — входящие сообщения от Jivo Bot API
+  GET  /health                              — проверка работоспособности сервера
+  POST /webhook                             — входящие события от Chatwoot
+  POST /jivo/{tenant_id}                    — входящие сообщения от Jivo Bot API
+  POST /chat                                — чат-виджет: отправить сообщение
+  GET  /chat/history                        — чат-виджет: история диалога
+  POST /auth/login                          — получить JWT-токен оператора
+  GET  /admin/dialogs                       — список диалогов (для операторов)
+  GET  /admin/dialogs/{session_id}          — история одного диалога
+  POST /admin/dialogs/{session_id}/reply    — ответ оператора
+  POST /admin/dialogs/{session_id}/close    — закрыть диалог
 
 Как запустить:
   python main.py
@@ -16,9 +23,13 @@
   Этот URL нужно вставить в настройки бота в кабинете Jivo:
     jivosite.com → Управление → Боты → Webhook URL
 """
+from __future__ import annotations
+
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -46,25 +57,56 @@ class Settings(BaseSettings):
 
     port: int = 8000
 
+    # --- Новые поля: БД, JWT, CORS ---
+    jwt_secret: str = "change-me"
+    database_url: str = "sqlite+aiosqlite:///./dialogs.db"
+    cors_origins: str = "*"  # через запятую: "https://site1.ru,https://site2.ru"
+
 
 settings = Settings()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from db import init_db
+    await init_db()
+    yield
+
+
 app = FastAPI(
     title="Coworking AI Agent",
-    version="2.0.0",
+    version="3.0.0",
     description=(
         "ИИ-агент для коворкингов. "
-        "Поддерживает Chatwoot и Jivo, мульти-тенантность."
+        "Поддерживает Chatwoot, Jivo, чат-виджет и панель оператора."
     ),
+    lifespan=lifespan,
+)
+
+# --- CORS ---
+
+origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # --- Роутеры ---
 
-from routes.webhook import router as chatwoot_router  # noqa: E402
-from routes.jivo_webhook import router as jivo_router  # noqa: E402
+from routes.webhook import router as chatwoot_router       # noqa: E402
+from routes.jivo_webhook import router as jivo_router      # noqa: E402
+from routes.auth import router as auth_router              # noqa: E402
+from routes.chat import router as chat_router              # noqa: E402
+from routes.admin import router as admin_router            # noqa: E402
 
-app.include_router(chatwoot_router)   # POST /webhook  — Chatwoot
-app.include_router(jivo_router)       # POST /jivo/{tenant_id}  — Jivo
+app.include_router(chatwoot_router)   # POST /webhook
+app.include_router(jivo_router)       # POST /jivo/{tenant_id}
+app.include_router(auth_router)       # POST /auth/login
+app.include_router(chat_router)       # POST /chat, GET /chat/history
+app.include_router(admin_router)      # GET/POST /admin/...
 
 
 # --- Healthcheck ---
@@ -86,6 +128,8 @@ async def health() -> dict:
         "available_tenants": sorted(available_tenants),
         "jivo_endpoint": "/jivo/{tenant_id}",
         "chatwoot_endpoint": "/webhook",
+        "chat_endpoint": "/chat",
+        "admin_endpoint": "/admin/dialogs",
     }
 
 
