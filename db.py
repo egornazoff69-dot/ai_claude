@@ -45,14 +45,43 @@ def _get_session_factory() -> async_sessionmaker[AsyncSession]:
     return _session_factory
 
 
+async def _run_migrations() -> None:
+    """
+    Безопасные DDL-миграции для существующих баз данных.
+    Добавляет колонки, которых может не хватать в старых БД.
+    Ошибки "duplicate column" / "already exists" игнорируются.
+    """
+    import logging
+    from sqlalchemy import text
+
+    logger = logging.getLogger(__name__)
+    migrations = [
+        "ALTER TABLE dialogs ADD COLUMN operator_mode BOOLEAN NOT NULL DEFAULT 0",
+    ]
+    async with _get_engine().begin() as conn:
+        for sql in migrations:
+            try:
+                await conn.execute(text(sql))
+                logger.info("Migration applied: %s", sql[:60])
+            except Exception as exc:
+                err = str(exc).lower()
+                if "duplicate column" in err or "already exists" in err:
+                    logger.debug("Migration already applied (skipping): %s", sql[:60])
+                else:
+                    logger.error("Migration failed: %s | %s", sql[:60], exc)
+                    raise
+
+
 async def init_db() -> None:
     """
     Создать все таблицы (CREATE TABLE IF NOT EXISTS).
+    Затем применить безопасные миграции для существующих БД.
     Вызывается один раз при старте приложения через FastAPI lifespan.
     """
     import models  # noqa: PLC0415 — импорт здесь регистрирует модели в Base.metadata
     async with _get_engine().begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    await _run_migrations()
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:

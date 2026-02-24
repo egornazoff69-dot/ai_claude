@@ -71,6 +71,7 @@ class MessageOut(BaseModel):
 class DialogSummary(BaseModel):
     session_id: str
     status: str
+    operator_mode: bool
     user_name: str | None
     created_at: str
     updated_at: str
@@ -81,6 +82,7 @@ class DialogSummary(BaseModel):
 class DialogDetail(BaseModel):
     session_id: str
     status: str
+    operator_mode: bool
     user_name: str | None
     created_at: str
     updated_at: str
@@ -137,6 +139,7 @@ async def list_dialogs(
             DialogSummary(
                 session_id=d.id,
                 status=d.status,
+                operator_mode=d.operator_mode,
                 user_name=d.user_name,
                 created_at=d.created_at.isoformat(),
                 updated_at=d.updated_at.isoformat(),
@@ -166,6 +169,7 @@ async def get_dialog(session_id: str, db: AsyncSession = Depends(get_db)):
     return DialogDetail(
         session_id=dialog.id,
         status=dialog.status,
+        operator_mode=dialog.operator_mode,
         user_name=dialog.user_name,
         created_at=dialog.created_at.isoformat(),
         updated_at=dialog.updated_at.isoformat(),
@@ -222,3 +226,45 @@ async def close_dialog(session_id: str, db: AsyncSession = Depends(get_db)):
     dialog.status = "closed"
     dialog.updated_at = datetime.now(timezone.utc)
     return {"session_id": session_id, "status": "closed"}
+
+
+# ---------------------------------------------------------------------------
+# POST /admin/dialogs/{session_id}/takeover
+# ---------------------------------------------------------------------------
+
+@router.post("/dialogs/{session_id}/takeover")
+async def takeover_dialog(session_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Взять диалог в работу: оператор отвечает вместо бота.
+    Устанавливает operator_mode=True. Бот перестаёт отвечать.
+    """
+    result = await db.execute(select(Dialog).where(Dialog.id == session_id))
+    dialog: Dialog | None = result.scalars().first()
+    if dialog is None:
+        raise HTTPException(status_code=404, detail="Dialog not found")
+    if dialog.status == "closed":
+        raise HTTPException(status_code=409, detail="Dialog is closed")
+
+    dialog.operator_mode = True
+    dialog.updated_at = datetime.now(timezone.utc)
+    return {"session_id": session_id, "operator_mode": True}
+
+
+# ---------------------------------------------------------------------------
+# POST /admin/dialogs/{session_id}/release
+# ---------------------------------------------------------------------------
+
+@router.post("/dialogs/{session_id}/release")
+async def release_dialog(session_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Передать диалог обратно боту: operator_mode=False.
+    Бот снова будет отвечать на сообщения пользователя.
+    """
+    result = await db.execute(select(Dialog).where(Dialog.id == session_id))
+    dialog: Dialog | None = result.scalars().first()
+    if dialog is None:
+        raise HTTPException(status_code=404, detail="Dialog not found")
+
+    dialog.operator_mode = False
+    dialog.updated_at = datetime.now(timezone.utc)
+    return {"session_id": session_id, "operator_mode": False}

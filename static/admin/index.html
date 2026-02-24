@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Панель оператора</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-400: #9ca3af;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-900: #111827;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: var(--gray-900); background: var(--gray-100); height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── Login ────────────────────────────────────────────────────────────── */
+    #login-screen { display: flex; align-items: center; justify-content: center; flex: 1; }
+    .login-card { background: #fff; border-radius: 12px; padding: 40px 36px; box-shadow: 0 4px 24px rgba(0,0,0,.1); width: 360px; max-width: 92vw; }
+    .login-card h1 { font-size: 20px; font-weight: 700; margin-bottom: 24px; color: var(--gray-900); }
+    .login-card input { display: block; width: 100%; border: 1px solid var(--gray-200); border-radius: 8px; padding: 10px 12px; font-size: 14px; margin-bottom: 12px; outline: none; }
+    .login-card input:focus { border-color: var(--primary); }
+    .login-card button[type=submit] { width: 100%; background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 11px; font-size: 15px; cursor: pointer; margin-top: 4px; }
+    .login-card button[type=submit]:hover { background: var(--primary-dark); }
+    .error { color: var(--danger); font-size: 13px; margin-top: 8px; }
+
+    /* ── App layout ──────────────────────────────────────────────────────── */
+    #app { display: flex; flex: 1; overflow: hidden; }
+
+    /* ── Sidebar ─────────────────────────────────────────────────────────── */
+    #sidebar { width: 300px; min-width: 220px; background: #fff; border-right: 1px solid var(--gray-200); display: flex; flex-direction: column; overflow: hidden; }
+    .sidebar-header { padding: 14px 12px 10px; border-bottom: 1px solid var(--gray-200); display: flex; flex-direction: column; gap: 8px; }
+    .sidebar-header h2 { font-size: 16px; font-weight: 700; }
+    .sidebar-controls { display: flex; gap: 6px; align-items: center; }
+    .sidebar-controls select { flex: 1; border: 1px solid var(--gray-200); border-radius: 6px; padding: 5px 8px; font-size: 13px; outline: none; }
+    #logout-btn { background: none; border: 1px solid var(--gray-200); border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer; color: var(--gray-600); white-space: nowrap; }
+    #logout-btn:hover { background: var(--gray-100); }
+    #dialogs-list { flex: 1; overflow-y: auto; }
+    .empty-list { padding: 24px; text-align: center; color: var(--gray-400); }
+
+    /* ── Dialog list item ────────────────────────────────────────────────── */
+    .dialog-item { padding: 12px 14px; border-bottom: 1px solid var(--gray-100); cursor: pointer; transition: background .1s; }
+    .dialog-item:hover { background: var(--gray-50); }
+    .dialog-item.active { background: #eff6ff; border-left: 3px solid var(--primary); }
+    .dialog-item-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .dialog-name { font-weight: 600; font-size: 14px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dialog-preview { font-size: 12px; color: var(--gray-600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+    .dialog-time { font-size: 11px; color: var(--gray-400); }
+
+    /* ── Badges ──────────────────────────────────────────────────────────── */
+    .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
+    .badge-open   { background: #dcfce7; color: #166534; }
+    .badge-closed { background: var(--gray-100); color: var(--gray-600); }
+    .badge-you    { background: #fef3c7; color: #92400e; }
+
+    /* ── Main panel ──────────────────────────────────────────────────────── */
+    #main-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    #empty-state { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--gray-400); }
+    #dialog-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* ── Dialog header ───────────────────────────────────────────────────── */
+    #dialog-header { padding: 14px 16px; border-bottom: 1px solid var(--gray-200); background: #fff; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .dialog-header-info { display: flex; align-items: center; gap: 8px; }
+    #dialog-title { font-size: 16px; font-weight: 700; }
+    #dialog-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn { border: none; border-radius: 7px; padding: 7px 14px; font-size: 13px; cursor: pointer; font-weight: 500; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-200); }
+    .btn-secondary:hover { background: var(--gray-200); }
+    .btn-danger { background: #fee2e2; color: var(--danger); }
+    .btn-danger:hover { background: #fecaca; }
+
+    /* ── Messages ────────────────────────────────────────────────────────── */
+    #messages-container { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; background: var(--gray-50); }
+    .msg { max-width: 72%; display: flex; flex-direction: column; gap: 3px; }
+    .msg-user { align-self: flex-end; }
+    .msg-bot, .msg-operator { align-self: flex-start; }
+    .msg-label { font-size: 11px; font-weight: 600; color: var(--gray-400); }
+    .msg-user .msg-label { text-align: right; }
+    .msg-bubble { padding: 9px 13px; border-radius: 12px; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
+    .msg-user .msg-bubble { background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+    .msg-bot .msg-bubble { background: #fff; border: 1px solid var(--gray-200); border-bottom-left-radius: 4px; }
+    .msg-operator .msg-bubble { background: #fef3c7; border: 1px solid #fde68a; border-bottom-left-radius: 4px; color: #78350f; }
+    .msg-time { font-size: 11px; color: var(--gray-400); }
+    .msg-user .msg-time { text-align: right; }
+
+    /* ── Reply area ──────────────────────────────────────────────────────── */
+    #reply-area { padding: 12px; border-top: 1px solid var(--gray-200); background: #fff; display: flex; gap: 8px; align-items: flex-end; }
+    #reply-input { flex: 1; border: 1px solid var(--gray-200); border-radius: 8px; padding: 9px 12px; font-size: 14px; font-family: inherit; resize: none; outline: none; min-height: 40px; max-height: 120px; line-height: 1.45; }
+    #reply-input:focus { border-color: var(--primary); }
+    #reply-input:disabled { background: var(--gray-100); color: var(--gray-400); }
+    #reply-btn { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 9px 16px; font-size: 14px; cursor: pointer; white-space: nowrap; }
+    #reply-btn:hover { background: var(--primary-dark); }
+    #reply-btn:disabled { background: var(--gray-200); color: var(--gray-400); cursor: default; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- ── Login ──────────────────────────────────────────────────────────────── -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1>Панель оператора</h1>
+    <form id="login-form">
+      <input type="text"     id="username" placeholder="Логин"   required autocomplete="username">
+      <input type="password" id="password" placeholder="Пароль"  required autocomplete="current-password">
+      <button type="submit">Войти</button>
+      <p id="login-error" class="error hidden"></p>
+    </form>
+  </div>
+</div>
+
+<!-- ── App ────────────────────────────────────────────────────────────────── -->
+<div id="app" class="hidden">
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <h2>Диалоги</h2>
+      <div class="sidebar-controls">
+        <select id="status-filter">
+          <option value="">Все</option>
+          <option value="open" selected>Открытые</option>
+          <option value="closed">Закрытые</option>
+        </select>
+        <button id="logout-btn">Выйти</button>
+      </div>
+    </div>
+    <div id="dialogs-list"></div>
+  </aside>
+
+  <main id="main-panel">
+    <div id="empty-state"><p>Выберите диалог из списка</p></div>
+
+    <div id="dialog-panel" class="hidden">
+      <div id="dialog-header">
+        <div class="dialog-header-info">
+          <h2 id="dialog-title">Диалог</h2>
+          <span id="dialog-status-badge" class="badge"></span>
+          <span id="operator-mode-badge" class="badge badge-you hidden">ВЫ</span>
+        </div>
+        <div id="dialog-actions">
+          <button id="btn-takeover" class="btn btn-primary">Взять в работу</button>
+          <button id="btn-release"  class="btn btn-secondary hidden">Передать боту</button>
+          <button id="btn-close"    class="btn btn-danger">Закрыть диалог</button>
+        </div>
+      </div>
+
+      <div id="messages-container"></div>
+
+      <div id="reply-area">
+        <textarea id="reply-input" placeholder="Введите ответ... (Ctrl+Enter — отправить)" rows="2"></textarea>
+        <button id="reply-btn">Отправить</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+'use strict';
+
+var API = window.location.origin;
+var token = sessionStorage.getItem('admin_token') || null;
+var currentDialogId = null;
+var currentMsgCount = 0;
+var listPollTimer   = null;
+var detailPollTimer = null;
+
+// ── Boot ──────────────────────────────────────────────────────────────────
+function boot() {
+  if (token) showApp();
+  else       showLogin();
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────
+function showLogin() {
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('app').classList.add('hidden');
+}
+
+function showApp() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  loadDialogs();
+  startListPolling();
+}
+
+document.getElementById('login-form').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var errEl = document.getElementById('login-error');
+  errEl.classList.add('hidden');
+  fetch(API + '/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      username: document.getElementById('username').value,
+      password: document.getElementById('password').value,
+    }),
+  })
+  .then(function (r) {
+    if (!r.ok) throw new Error('Неверный логин или пароль');
+    return r.json();
+  })
+  .then(function (data) {
+    token = data.access_token;
+    sessionStorage.setItem('admin_token', token);
+    showApp();
+  })
+  .catch(function (err) {
+    errEl.textContent = err.message;
+    errEl.classList.remove('hidden');
+  });
+});
+
+document.getElementById('logout-btn').addEventListener('click', function () {
+  token = null;
+  currentDialogId = null;
+  sessionStorage.removeItem('admin_token');
+  stopAllPolling();
+  showLogin();
+});
+
+// ── API helpers ───────────────────────────────────────────────────────────
+function apiGet(path) {
+  return fetch(API + path, { headers: { 'Authorization': 'Bearer ' + token } })
+    .then(function (r) {
+      if (r.status === 401) { doLogout(); throw new Error('Unauthorized'); }
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    });
+}
+
+function apiPost(path, body) {
+  return fetch(API + path, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Content-Type': 'application/json',
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  })
+  .then(function (r) {
+    if (r.status === 401) { doLogout(); throw new Error('Unauthorized'); }
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  });
+}
+
+function doLogout() {
+  token = null;
+  sessionStorage.removeItem('admin_token');
+  stopAllPolling();
+  showLogin();
+}
+
+// ── Dialogs list ──────────────────────────────────────────────────────────
+function loadDialogs() {
+  var statusVal = document.getElementById('status-filter').value;
+  var url = '/admin/dialogs?limit=100' + (statusVal ? '&status=' + statusVal : '');
+  apiGet(url)
+    .then(renderDialogsList)
+    .catch(function () {});
+}
+
+function renderDialogsList(data) {
+  var container = document.getElementById('dialogs-list');
+  if (!data || data.length === 0) {
+    container.innerHTML = '<p class="empty-list">Нет диалогов</p>';
+    return;
+  }
+  container.innerHTML = '';
+  data.forEach(function (d) {
+    var item = document.createElement('div');
+    item.className = 'dialog-item' + (d.session_id === currentDialogId ? ' active' : '');
+    item.dataset.id = d.session_id;
+
+    var badges = (d.operator_mode ? '<span class="badge badge-you">ВЫ</span>' : '') +
+                 (d.status === 'closed'
+                   ? '<span class="badge badge-closed">Закрыт</span>'
+                   : '<span class="badge badge-open">Открыт</span>');
+
+    item.innerHTML =
+      '<div class="dialog-item-header">' +
+        '<span class="dialog-name">' + escHtml(d.user_name || 'Гость') + '</span>' +
+        badges +
+      '</div>' +
+      '<div class="dialog-preview">' + escHtml((d.last_message || '—').substring(0, 80)) + '</div>' +
+      '<div class="dialog-time">' + fmtTime(d.last_message_at || d.updated_at) + '</div>';
+
+    item.addEventListener('click', function () { openDialog(d.session_id); });
+    container.appendChild(item);
+  });
+}
+
+function startListPolling() {
+  listPollTimer = setInterval(loadDialogs, 5000);
+}
+
+document.getElementById('status-filter').addEventListener('change', loadDialogs);
+
+// ── Dialog detail ─────────────────────────────────────────────────────────
+function openDialog(id) {
+  currentDialogId = id;
+  currentMsgCount = 0;
+  stopDetailPolling();
+  document.getElementById('empty-state').classList.add('hidden');
+  document.getElementById('dialog-panel').classList.remove('hidden');
+  loadDialogDetail();
+  startDetailPolling();
+  // Highlight active item in list
+  document.querySelectorAll('.dialog-item').forEach(function (el) {
+    el.classList.toggle('active', el.dataset.id === id);
+  });
+}
+
+function loadDialogDetail() {
+  apiGet('/admin/dialogs/' + currentDialogId)
+    .then(renderDialogDetail)
+    .catch(function () {});
+}
+
+function renderDialogDetail(data) {
+  // Title
+  document.getElementById('dialog-title').textContent =
+    'Диалог с ' + (data.user_name || 'Гостем');
+
+  // Status badge
+  var sb = document.getElementById('dialog-status-badge');
+  if (data.status === 'open') { sb.textContent = 'Открыт'; sb.className = 'badge badge-open'; }
+  else                        { sb.textContent = 'Закрыт'; sb.className = 'badge badge-closed'; }
+
+  // Operator mode badge + buttons
+  var opBadge     = document.getElementById('operator-mode-badge');
+  var btnTakeover = document.getElementById('btn-takeover');
+  var btnRelease  = document.getElementById('btn-release');
+  if (data.operator_mode) {
+    opBadge.classList.remove('hidden');
+    btnTakeover.classList.add('hidden');
+    btnRelease.classList.remove('hidden');
+  } else {
+    opBadge.classList.add('hidden');
+    btnTakeover.classList.remove('hidden');
+    btnRelease.classList.add('hidden');
+  }
+  // Hide takeover/release on closed dialogs
+  if (data.status === 'closed') {
+    btnTakeover.classList.add('hidden');
+    btnRelease.classList.add('hidden');
+  }
+
+  // Messages — re-render only if count changed
+  var msgs = data.messages || [];
+  if (msgs.length !== currentMsgCount) {
+    var container = document.getElementById('messages-container');
+    container.innerHTML = '';
+    msgs.forEach(function (m) {
+      container.appendChild(buildMsgEl(m));
+    });
+    container.scrollTop = container.scrollHeight;
+    currentMsgCount = msgs.length;
+  }
+
+  // Reply area state
+  var replyInput = document.getElementById('reply-input');
+  var replyBtn   = document.getElementById('reply-btn');
+  replyInput.disabled = data.status === 'closed';
+  replyBtn.disabled   = data.status === 'closed';
+}
+
+function buildMsgEl(m) {
+  var wrap = document.createElement('div');
+  wrap.className = 'msg msg-' + (m.role === 'user' ? 'user' : m.role === 'operator' ? 'operator' : 'bot');
+  var label = m.role === 'user' ? 'Пользователь' : m.role === 'operator' ? 'Оператор' : 'Бот';
+  wrap.innerHTML =
+    '<span class="msg-label">' + escHtml(label) + '</span>' +
+    '<div class="msg-bubble">' + escHtml(m.text).replace(/\n/g, '<br>') + '</div>' +
+    '<span class="msg-time">' + fmtTime(m.created_at) + '</span>';
+  return wrap;
+}
+
+function startDetailPolling() {
+  detailPollTimer = setInterval(function () {
+    if (currentDialogId) loadDialogDetail();
+  }, 3000);
+}
+
+function stopDetailPolling() {
+  clearInterval(detailPollTimer);
+  detailPollTimer = null;
+}
+
+function stopAllPolling() {
+  clearInterval(listPollTimer);
+  stopDetailPolling();
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────
+document.getElementById('btn-takeover').addEventListener('click', function () {
+  apiPost('/admin/dialogs/' + currentDialogId + '/takeover')
+    .then(function () { loadDialogDetail(); loadDialogs(); })
+    .catch(function () {});
+});
+
+document.getElementById('btn-release').addEventListener('click', function () {
+  apiPost('/admin/dialogs/' + currentDialogId + '/release')
+    .then(function () { loadDialogDetail(); loadDialogs(); })
+    .catch(function () {});
+});
+
+document.getElementById('btn-close').addEventListener('click', function () {
+  if (!confirm('Закрыть диалог?')) return;
+  apiPost('/admin/dialogs/' + currentDialogId + '/close')
+    .then(function () { loadDialogDetail(); loadDialogs(); })
+    .catch(function () {});
+});
+
+document.getElementById('reply-btn').addEventListener('click', sendReply);
+document.getElementById('reply-input').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); sendReply(); }
+});
+// Auto-grow textarea
+document.getElementById('reply-input').addEventListener('input', function () {
+  this.style.height = '';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+function sendReply() {
+  var input = document.getElementById('reply-input');
+  var text = input.value.trim();
+  if (!text || !currentDialogId) return;
+  input.value = '';
+  input.style.height = '';
+  apiPost('/admin/dialogs/' + currentDialogId + '/reply', { message: text })
+    .then(function () { loadDialogDetail(); })
+    .catch(function () {});
+}
+
+// ── Utilities ─────────────────────────────────────────────────────────────
+function fmtTime(iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  return d.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ── Start ─────────────────────────────────────────────────────────────────
+boot();
+</script>
+</body>
+</html>

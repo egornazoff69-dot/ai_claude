@@ -6,12 +6,17 @@
   POST /webhook                             — входящие события от Chatwoot
   POST /jivo/{tenant_id}                    — входящие сообщения от Jivo Bot API
   POST /chat                                — чат-виджет: отправить сообщение
+  POST /chat/{tenant_id}                    — чат-виджет: мультитенант
   GET  /chat/history                        — чат-виджет: история диалога
   POST /auth/login                          — получить JWT-токен оператора
   GET  /admin/dialogs                       — список диалогов (для операторов)
   GET  /admin/dialogs/{session_id}          — история одного диалога
   POST /admin/dialogs/{session_id}/reply    — ответ оператора
   POST /admin/dialogs/{session_id}/close    — закрыть диалог
+  POST /admin/dialogs/{session_id}/takeover — оператор берёт диалог
+  POST /admin/dialogs/{session_id}/release  — передать диалог боту
+  GET  /static/widget.js                    — встраиваемый виджет
+  GET  /static/admin/index.html             — панель оператора
 
 Как запустить:
   python main.py
@@ -30,6 +35,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -105,8 +111,15 @@ from routes.admin import router as admin_router            # noqa: E402
 app.include_router(chatwoot_router)   # POST /webhook
 app.include_router(jivo_router)       # POST /jivo/{tenant_id}
 app.include_router(auth_router)       # POST /auth/login
-app.include_router(chat_router)       # POST /chat, GET /chat/history
+app.include_router(chat_router)       # POST /chat, POST /chat/{tenant_id}, GET /chat/history
 app.include_router(admin_router)      # GET/POST /admin/...
+
+# --- Статические файлы (виджет и панель оператора) ---
+
+import os as _os
+_static_dir = _os.path.join(_os.path.dirname(__file__), "static")
+if _os.path.isdir(_static_dir):
+    app.mount("/static", StaticFiles(directory=_static_dir), name="static")
 
 
 # --- Healthcheck ---

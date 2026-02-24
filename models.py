@@ -9,7 +9,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db import Base
@@ -43,6 +43,9 @@ class Dialog(Base):
     )  # "widget" — на будущее: "telegram", "whatsapp" и т.д.
     user_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     meta: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON-строка
+    operator_mode: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, server_default="0"
+    )
 
     messages: Mapped[list["Message"]] = relationship(
         "Message",

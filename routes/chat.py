@@ -1,6 +1,7 @@
 """
-POST /chat      — отправить сообщение виджета, получить ответ бота.
-GET  /chat/history — получить историю диалога по session_id.
+POST /chat              — отправить сообщение виджета (тенант из .env по умолчанию).
+POST /chat/{tenant_id}  — отправить сообщение виджета с явным указанием тенанта.
+GET  /chat/history      — получить историю диалога по session_id.
 """
 from __future__ import annotations
 
@@ -15,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db import get_db
 from models import Dialog, Message
 from services.llm_client import BaseLLMClient, create_llm_client, parse_llm_json, SYSTEM_PROMPT_RU
-from utils.tenant_loader import get_active_tenant
+from utils.tenant_loader import get_active_tenant, load_tenant
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +40,9 @@ def _get_llm() -> BaseLLMClient:
 # System prompt builder
 # ---------------------------------------------------------------------------
 
-def _build_chat_system_prompt() -> str:
+def _build_chat_system_prompt(tenant_id: str | None = None) -> str:
     """Формирует системный промпт с полным JSON тенанта для чат-виджета."""
-    tenant = get_active_tenant()
+    tenant = load_tenant(tenant_id) if tenant_id else get_active_tenant()
     return SYSTEM_PROMPT_RU + "\n\nДанные о кабинетах:\n" + json.dumps(tenant, ensure_ascii=False)
 
 
@@ -79,15 +80,20 @@ class ChatResponse(BaseModel):
 class HistoryResponse(BaseModel):
     session_id: str
     status: str
+    operator_mode: bool
     messages: list[MessageOut]
 
 
 # ---------------------------------------------------------------------------
-# POST /chat
+# Shared handler
 # ---------------------------------------------------------------------------
 
-@router.post("", response_model=None)
-async def send_message(body: ChatRequest, db: AsyncSession = Depends(get_db)):
+async def _handle_chat(
+    body: ChatRequest,
+    db: AsyncSession,
+    tenant_id: str | None = None,
+) -> dict:
+    """Общая логика для POST /chat и POST /chat/{tenant_id}."""
     # --- Получить или создать диалог ---
     if body.session_id:
         result = await db.execute(select(Dialog).where(Dialog.id == body.session_id))
@@ -97,14 +103,29 @@ async def send_message(body: ChatRequest, db: AsyncSession = Depends(get_db)):
         if dialog.status == "closed":
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Dialog is closed")
     else:
-        dialog = Dialog(user_name=body.user_name)
+        meta_data: dict = {}
+        if tenant_id:
+            meta_data["tenant_id"] = tenant_id
+        dialog = Dialog(
+            user_name=body.user_name,
+            meta=json.dumps(meta_data) if meta_data else None,
+        )
         db.add(dialog)
-        await db.flush()  # получить dialog.id до коммита
+        await db.flush()
 
     # --- Сохранить сообщение пользователя ---
     user_msg = Message(dialog_id=dialog.id, role="user", text=body.message)
     db.add(user_msg)
     await db.flush()
+
+    # --- Проверить operator_mode — если True, бот молчит ---
+    if dialog.operator_mode:
+        return {
+            "session_id": dialog.id,
+            "reply": "Оператор скоро вам ответит.",
+            "from": "bot",
+            "operator_mode": True,
+        }
 
     # --- Загрузить историю для LLM ---
     hist_result = await db.execute(
@@ -121,7 +142,7 @@ async def send_message(body: ChatRequest, db: AsyncSession = Depends(get_db)):
 
     # --- Вызов LLM ---
     try:
-        system_prompt = _build_chat_system_prompt()
+        system_prompt = _build_chat_system_prompt(tenant_id)
         raw = await _get_llm().ask(llm_messages, system_prompt=system_prompt)
         parsed = parse_llm_json(raw)
         reply_text: str = parsed.get("reply_text", raw)
@@ -134,7 +155,38 @@ async def send_message(body: ChatRequest, db: AsyncSession = Depends(get_db)):
     db.add(bot_msg)
     # commit произойдёт автоматически в get_db()
 
-    return {"session_id": dialog.id, "reply": reply_text, "from": "bot"}
+    return {"session_id": dialog.id, "reply": reply_text, "from": "bot", "operator_mode": False}
+
+
+# ---------------------------------------------------------------------------
+# POST /chat
+# ---------------------------------------------------------------------------
+
+@router.post("", response_model=None)
+async def send_message(body: ChatRequest, db: AsyncSession = Depends(get_db)):
+    return await _handle_chat(body, db, tenant_id=None)
+
+
+# ---------------------------------------------------------------------------
+# POST /chat/{tenant_id}
+# ---------------------------------------------------------------------------
+
+@router.post("/{tenant_id}", response_model=None)
+async def send_message_tenant(
+    tenant_id: str,
+    body: ChatRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Отправить сообщение виджета с явным указанием тенанта.
+    URL: POST /chat/{tenant_id}
+    Зеркалирует паттерн /jivo/{tenant_id}.
+    """
+    try:
+        load_tenant(tenant_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Unknown tenant: {tenant_id}")
+    return await _handle_chat(body, db, tenant_id=tenant_id)
 
 
 # ---------------------------------------------------------------------------
@@ -158,6 +210,7 @@ async def get_history(session_id: str, db: AsyncSession = Depends(get_db)):
     return HistoryResponse(
         session_id=dialog.id,
         status=dialog.status,
+        operator_mode=dialog.operator_mode,
         messages=[
             MessageOut(
                 id=m.id,
